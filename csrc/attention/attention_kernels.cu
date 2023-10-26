@@ -272,7 +272,7 @@ __device__ void paged_attention_kernel(
   using Float_L_vec = typename FloatVec<L_vec>::Type;
 
   constexpr int NUM_V_VECS_PER_ROW = BLOCK_SIZE / V_VEC_SIZE;
-  constexpr int NUM_ROWS_PER_ITER = WARP_SIZE / NUM_V_VECS_PER_ROW;
+  constexpr int NUM_ROWS_PER_ITER = MAX(WARP_SIZE / NUM_V_VECS_PER_ROW, 1);
   constexpr int NUM_ROWS_PER_THREAD = DIVIDE_ROUND_UP(HEAD_SIZE, NUM_ROWS_PER_ITER);
 
   // NOTE(woosuk): We use FP32 for the accumulator for better accuracy.
@@ -644,10 +644,17 @@ void paged_attention_v1_launcher(
     max_context_len,                                                \
     alibi_slopes);
 
-// NOTE(woosuk): To reduce the compilation time, we omitted block sizes
-// 1, 2, 4, 64, 128, 256.
 #define CALL_V1_LAUNCHER_BLOCK_SIZE(T)                              \
   switch (block_size) {                                             \
+    case 1:                                                         \
+      CALL_V1_LAUNCHER(T, 1);                                       \
+      break;                                                        \
+    case 2:                                                         \
+      CALL_V1_LAUNCHER(T, 2);                                       \
+      break;                                                        \
+    case 4:                                                         \
+      CALL_V1_LAUNCHER(T, 4);                                       \
+      break;                                                        \
     case 8:                                                         \
       CALL_V1_LAUNCHER(T, 8);                                       \
       break;                                                        \
@@ -656,6 +663,15 @@ void paged_attention_v1_launcher(
       break;                                                        \
     case 32:                                                        \
       CALL_V1_LAUNCHER(T, 32);                                      \
+      break;                                                        \
+    case 64:                                                        \
+      CALL_V1_LAUNCHER(T, 64);                                      \
+      break;                                                        \
+    case 128:                                                       \
+      CALL_V1_LAUNCHER(T, 128);                                     \
+      break;                                                        \
+    case 256:                                                       \
+      CALL_V1_LAUNCHER(T, 256);                                     \
       break;                                                        \
     default:                                                        \
       TORCH_CHECK(false, "Unsupported block size: ", block_size);   \
@@ -816,10 +832,17 @@ void paged_attention_v2_launcher(
     max_context_len,                                                \
     alibi_slopes);
 
-// NOTE(woosuk): To reduce the compilation time, we omitted block sizes
-// 1, 2, 4, 64, 128, 256.
 #define CALL_V2_LAUNCHER_BLOCK_SIZE(T)                              \
   switch (block_size) {                                             \
+    case 1:                                                         \
+      CALL_V2_LAUNCHER(T, 1);                                       \
+      break;                                                        \
+    case 2:                                                         \
+      CALL_V2_LAUNCHER(T, 2);                                       \
+      break;                                                        \
+    case 4:                                                         \
+      CALL_V2_LAUNCHER(T, 4);                                       \
+      break;                                                        \
     case 8:                                                         \
       CALL_V2_LAUNCHER(T, 8);                                       \
       break;                                                        \
@@ -828,6 +851,15 @@ void paged_attention_v2_launcher(
       break;                                                        \
     case 32:                                                        \
       CALL_V2_LAUNCHER(T, 32);                                      \
+      break;                                                        \
+    case 64:                                                        \
+      CALL_V2_LAUNCHER(T, 64);                                      \
+      break;                                                        \
+    case 128:                                                       \
+      CALL_V2_LAUNCHER(T, 128);                                     \
+      break;                                                        \
+    case 256:                                                       \
+      CALL_V2_LAUNCHER(T, 256);                                     \
       break;                                                        \
     default:                                                        \
       TORCH_CHECK(false, "Unsupported block size: ", block_size);   \
