@@ -29,6 +29,7 @@ class EngineArgs:
     max_num_seqs: int = 256
     max_paddings: int = 256
     disable_log_stats: bool = False
+    collect_stats: bool = False
     revision: Optional[str] = None
     tokenizer_revision: Optional[str] = None
     quantization: Optional[str] = None
@@ -199,7 +200,8 @@ class EngineArgs:
         scheduler_config = SchedulerConfig(self.max_num_batched_tokens,
                                            self.max_num_seqs,
                                            model_config.max_model_len,
-                                           self.max_paddings)
+                                           self.max_paddings,
+                                           self.collect_stats)
         return model_config, cache_config, parallel_config, scheduler_config
 
 
