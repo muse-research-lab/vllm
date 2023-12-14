@@ -48,6 +48,7 @@ class ModelConfig:
             output). If None, will be derived from the model.
         quantization: Quantization method that was used to quantize the model
             weights. If None, we assume the model weights are not quantized.
+        token: Hugging Face token.
     """
 
     def __init__(
@@ -64,6 +65,7 @@ class ModelConfig:
         tokenizer_revision: Optional[str] = None,
         max_model_len: Optional[int] = None,
         quantization: Optional[str] = None,
+        token: Optional[str] = None
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -75,8 +77,9 @@ class ModelConfig:
         self.revision = revision
         self.tokenizer_revision = tokenizer_revision
         self.quantization = quantization
+        self.token = token
 
-        self.hf_config = get_config(model, trust_remote_code, revision)
+        self.hf_config = get_config(model, trust_remote_code, revision, token)
         self.dtype = _get_and_verify_dtype(self.hf_config, dtype)
         self.max_model_len = _get_and_verify_max_len(self.hf_config,
                                                      max_model_len)

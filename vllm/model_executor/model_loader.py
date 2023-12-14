@@ -70,7 +70,8 @@ def get_model(model_config: ModelConfig) -> nn.Module:
                 f"Quantization is not supported for {model_class}.")
         quant_config = get_quant_config(model_config.quantization,
                                         model_config.model,
-                                        model_config.download_dir)
+                                        model_config.download_dir,
+                                        model_config.token)
         capability = torch.cuda.get_device_capability()
         capability = capability[0] * 10 + capability[1]
         if capability < quant_config.get_min_capability():
@@ -101,6 +102,7 @@ def get_model(model_config: ModelConfig) -> nn.Module:
         else:
             # Load the weights from the cached or downloaded files.
             model.load_weights(model_config.model, model_config.download_dir,
-                               model_config.load_format, model_config.revision)
+                               model_config.load_format, model_config.revision,
+                               model_config.token)
             model = model.cuda()
     return model.eval()
