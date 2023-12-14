@@ -32,7 +32,7 @@ HF_TOKEN = "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"
 
 TOKENIZERS = {
     "falcon": AutoTokenizer.from_pretrained("tiiuae/falcon-7b"),
-    "llama": LlamaTokenizer.from_pretrained("meta-llama/Llama-2-13b", token=HF_TOKEN),
+    "llama": LlamaTokenizer.from_pretrained("meta-llama/Llama-2-13b-hf", token=HF_TOKEN),
     "mistral": AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1"),
     "opt": AutoTokenizer.from_pretrained("facebook/opt-13b"),
 }
