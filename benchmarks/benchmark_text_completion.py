@@ -25,6 +25,7 @@ def main(args: argparse.Namespace):
         block_size=args.block_size,
         max_num_batched_tokens=args.max_num_batched_tokens,
         max_num_seqs=args.max_num_sequences,
+        max_model_len=args.max_model_len,
         disable_log_stats=not args.log_stats,
         collect_stats=args.collect_stats,
         token=args.token,
@@ -45,6 +46,7 @@ def main(args: argparse.Namespace):
         args.n4_beam,
         args.n6_beam,
         args.n8_beam,
+        args.max_model_len,
     )
 
     # Warm up.
@@ -133,6 +135,7 @@ if __name__ == '__main__':
     parser.add_argument('--block-size', type=int, default=16)
     parser.add_argument('--max-num-batched-tokens', type=int, required=False)
     parser.add_argument('--max-num-sequences', type=int, required=False)
+    parser.add_argument('--max-model-len', type=int, required=False)
     parser.add_argument('--log-stats', action='store_true')
 
     # Requests parameters
