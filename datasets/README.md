@@ -49,6 +49,12 @@ dataset.
 ### Download and Preparation Instructions
 
 ```
+pip install datasets
+```
+Before running the following scripts, change `HF_TOKEN` parameter in `scripts/utils.py`.
+
+```
+cd datasets
 python scripts/download.py
 python scripts/prepare.py    
 python scripts/prepare_chatbot.py
