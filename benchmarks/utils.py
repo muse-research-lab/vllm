@@ -34,7 +34,10 @@ def get_dataset(dataset_name, model_name) -> str:
     dataset_path = os.path.abspath(os.path.join(os.getcwd(), "datasets"))
     
     if model_name in OPT_MODELS:
-        dataset_path = os.path.join(dataset_path, "opt")
+        if model_name == "opt-6.7b":
+            dataset_path = os.path.join(dataset_path, "opt-6.7")
+        else:
+            dataset_path = os.path.join(dataset_path, "opt")
     elif model_name in LLAMA_MODELS:
         dataset_path = os.path.join(dataset_path, "llama")
     elif model_name in MISTRAL_MODELS:
