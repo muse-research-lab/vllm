@@ -11,9 +11,12 @@ from vllm.model_executor import get_model, InputMetadata, set_random_seed
 from vllm.model_executor.parallel_utils.parallel_state import (
     initialize_model_parallel)
 from vllm.sampling_params import SamplingParams
+from vllm.logger import init_logger
 from vllm.sequence import SamplerOutput, SequenceData, SequenceGroupMetadata
 from vllm.worker.cache_engine import CacheEngine
 from vllm.utils import get_gpu_memory, get_max_shared_memory_bytes
+
+logger = init_logger(__name__)
 
 
 class Worker:
@@ -126,6 +129,9 @@ class Worker:
         num_gpu_blocks = int(
             (total_gpu_memory * gpu_memory_utilization - peak_memory) //
             cache_block_size)
+        logger.info(f"Peak memory: {peak_memory}\n"
+                    f"Total GPU memory: {total_gpu_memory}\n"
+                    f"Cache block size: {cache_block_size}")
         num_cpu_blocks = int(cpu_swap_space // cache_block_size)
         num_gpu_blocks = max(num_gpu_blocks, 0)
         num_cpu_blocks = max(num_cpu_blocks, 0)
