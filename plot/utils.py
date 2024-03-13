@@ -95,3 +95,50 @@ def find_mean_coord(x, y):
             break
 
     return x_mean, y[mean_idx]
+
+def get_cdf(data):
+    N = len(data)
+
+    x = np.sort(data)
+    y = np.arange(N) / float(N)
+
+    return x, y
+
+def get_tick_positions(x, columns, w, l, L):
+    centers = L * np.arange(len(x))
+    
+    positions = []             
+    if (len(columns) % 2) == 0:
+        cnt = -1
+
+        for i in range(len(columns)):
+
+            if len(columns) / 2 > i:
+                prefix = -1
+                cnt += 1
+            elif len(columns) / 2 == i:
+                prefix = 1
+            else:
+                prefix = 1
+                cnt -= 1
+
+            pos = prefix * ((len(columns) / 2 - cnt) * w + (len(columns) / 2 - cnt - 1) * l + 0.5 * l - 0.5 * w)
+                
+            positions.append(pos + centers)
+    else:
+        cnt = -1
+
+        for i in range(len(columns)):
+
+            if (len(columns) / 2 - i) >= 0.5:
+                prefix = -1
+                cnt += 1
+            else:
+                prefix = 1
+                cnt -= 1
+
+            pos = prefix * ((len(columns) / 2 - cnt) * w + (len(columns) / 2 - 0.5 - cnt) * l - 0.5 * w)
+
+            positions.append(pos + centers)
+
+    return positions
