@@ -39,7 +39,10 @@ def get_dataset(dataset_name, model_name) -> str:
         else:
             dataset_path = os.path.join(dataset_path, "opt")
     elif model_name in LLAMA_MODELS:
-        dataset_path = os.path.join(dataset_path, "llama")
+        if model_name == "Llama-2-7b" or model_name == "Llama-2-7b-hf":
+            dataset_path = os.path.join(dataset_path, "llama-7")
+        else:
+            dataset_path = os.path.join(dataset_path, "llama")
     elif model_name in MISTRAL_MODELS:
         dataset_path = os.path.join(dataset_path, "mistral")
     elif model_name in FALCON_MODELS:
