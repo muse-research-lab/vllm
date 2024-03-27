@@ -303,7 +303,8 @@ class AquilaForCausalLM(nn.Module):
                      model_name_or_path: str,
                      cache_dir: Optional[str] = None,
                      load_format: str = "auto",
-                     revision: Optional[str] = None):
+                     revision: Optional[str] = None,
+                     token: Optional[str] = None):
         tp_size = get_tensor_model_parallel_world_size()
         tensor_model_parallel_rank = get_tensor_model_parallel_rank()
         q_proj_shard_size = (self.config.hidden_size // tp_size)

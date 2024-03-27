@@ -296,7 +296,8 @@ class MistralForCausalLM(nn.Module):
                      model_name_or_path: str,
                      cache_dir: Optional[str] = None,
                      load_format: str = "auto",
-                     revision: Optional[str] = None):
+                     revision: Optional[str] = None,
+                     token: Optional[str] = None):
         if self.quant_config is None:
             weight_suffixes = ["weight"]
         else:

@@ -48,6 +48,7 @@ class ModelConfig:
             output). If None, will be derived from the model.
         quantization: Quantization method that was used to quantize the model
             weights. If None, we assume the model weights are not quantized.
+        token: Hugging Face token.
     """
 
     def __init__(
@@ -64,6 +65,7 @@ class ModelConfig:
         tokenizer_revision: Optional[str] = None,
         max_model_len: Optional[int] = None,
         quantization: Optional[str] = None,
+        token: Optional[str] = None
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -75,8 +77,9 @@ class ModelConfig:
         self.revision = revision
         self.tokenizer_revision = tokenizer_revision
         self.quantization = quantization
+        self.token = token
 
-        self.hf_config = get_config(model, trust_remote_code, revision)
+        self.hf_config = get_config(model, trust_remote_code, revision, token)
         self.dtype = _get_and_verify_dtype(self.hf_config, dtype)
         self.max_model_len = _get_and_verify_max_len(self.hf_config,
                                                      max_model_len)
@@ -269,6 +272,7 @@ class SchedulerConfig:
         max_model_len: Maximum length of a sequence (including prompt
             and generated text).
         max_paddings: Maximum number of paddings to be added to a batch.
+        collect_stats: Whether to collect performance-related statistics.
     """
 
     def __init__(
@@ -277,6 +281,7 @@ class SchedulerConfig:
         max_num_seqs: int,
         max_model_len: int,
         max_paddings: int,
+        collect_stats: bool = False,
     ) -> None:
         if max_num_batched_tokens is not None:
             self.max_num_batched_tokens = max_num_batched_tokens
@@ -287,6 +292,7 @@ class SchedulerConfig:
         self.max_num_seqs = max_num_seqs
         self.max_model_len = max_model_len
         self.max_paddings = max_paddings
+        self.collect_stats = collect_stats
         self._verify_args()
 
     def _verify_args(self) -> None:

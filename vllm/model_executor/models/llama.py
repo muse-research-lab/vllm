@@ -312,7 +312,8 @@ class LlamaForCausalLM(nn.Module):
                      model_name_or_path: str,
                      cache_dir: Optional[str] = None,
                      load_format: str = "auto",
-                     revision: Optional[str] = None):
+                     revision: Optional[str] = None,
+                     token: Optional[str] = None):
         if self.quant_config is None:
             weight_suffixes = ["weight"]
         else:
@@ -347,7 +348,7 @@ class LlamaForCausalLM(nn.Module):
         state_dict = self.state_dict()
 
         for name, loaded_weight in hf_model_weights_iterator(
-                model_name_or_path, cache_dir, load_format, revision):
+                model_name_or_path, cache_dir, load_format, revision, token):
             if "rotary_emb.inv_freq" in name:
                 continue
 

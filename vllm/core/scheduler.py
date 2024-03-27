@@ -8,6 +8,7 @@ from vllm.core.policy import PolicyFactory
 from vllm.logger import init_logger
 from vllm.sequence import (Sequence, SequenceData, SequenceGroup,
                            SequenceGroupMetadata, SequenceStatus)
+from vllm.stats import Stats, Step, Analysis, SeqGroupStats, SeqStats
 
 logger = init_logger(__name__)
 
@@ -82,6 +83,10 @@ class Scheduler:
         self.running: List[SequenceGroup] = []
         # Sequence groups in the SWAPPED state.
         self.swapped: List[SequenceGroup] = []
+
+        # Performance-related statistics.
+        self.stats = Stats(self.cache_config.num_gpu_blocks,
+                           self.cache_config.num_cpu_blocks)
 
     def add_seq_group(self, seq_group: SequenceGroup) -> None:
         # Add sequence groups to the waiting queue.
@@ -192,6 +197,11 @@ class Scheduler:
                     blocks_to_copy=blocks_to_copy,
                     ignored_seq_groups=ignored_seq_groups,
                 )
+
+                if self.scheduler_config.collect_stats:
+                    self.collect_stats(now, 0, len(scheduled),
+                                       scheduler_outputs)
+
                 return scheduler_outputs
 
         # NOTE(woosuk): Preemption happens only when there is no available slot
@@ -264,6 +274,13 @@ class Scheduler:
             blocks_to_copy=blocks_to_copy,
             ignored_seq_groups=[],
         )
+
+        # TODO: Revisit num_to_running = len(self.running)-len(running) before experimenting with SWAP preemption mode
+        if self.scheduler_config.collect_stats and not scheduler_outputs.is_empty():
+            self.collect_stats(now, len(preempted),
+                               len(self.running) - len(running),
+                               scheduler_outputs)
+
         return scheduler_outputs
 
     def schedule(self) -> Tuple[List[SequenceGroupMetadata], SchedulerOutputs]:
@@ -398,3 +415,90 @@ class Scheduler:
         blocks_to_swap_out.update(mapping)
         for seq in seq_group.get_seqs(status=SequenceStatus.RUNNING):
             seq.status = SequenceStatus.SWAPPED
+
+    def collect_stats(
+        self,
+        now: float,
+        num_preempted: int,
+        num_to_running: int,
+        scheduler_outputs: SchedulerOutputs
+    ) -> None:
+        num_free_gpu_blocks = self.block_manager.get_num_free_gpu_blocks()
+        num_used_gpu_blocks = self.cache_config.num_gpu_blocks - num_free_gpu_blocks
+        gpu_cache_usage = num_used_gpu_blocks / self.cache_config.num_gpu_blocks
+
+        num_free_cpu_blocks = self.block_manager.get_num_free_cpu_blocks()
+        num_used_cpu_blocks = self.cache_config.num_cpu_blocks - num_free_cpu_blocks
+        cpu_cache_usage = num_used_cpu_blocks / self.cache_config.num_cpu_blocks if self.cache_config.num_cpu_blocks else 0
+
+        num_logical_blocks = 0
+        num_logical_tokens = 0
+        num_physical_blocks = 0
+        num_physical_tokens = 0
+        physical_block_numbers = set()
+        analysis = Analysis()
+
+        for seq_group in self.running:
+            seq_group_id = seq_group.request_id
+            seq_group_stats = SeqGroupStats()
+
+            for seq in seq_group.get_seqs(status=SequenceStatus.RUNNING):
+                seq_id = seq.seq_id
+                seq_stats = SeqStats()
+
+                for block in seq.logical_token_blocks:
+                    seq_stats.add_logical_block(block.block_number,
+                                                block.num_tokens)
+
+                num_logical_blocks += len(seq.logical_token_blocks)
+                num_logical_tokens += seq.get_len()
+
+                block_table = self.block_manager.block_tables[seq_id]
+                for i, block in enumerate(block_table):
+                    seq_stats.add_physical_block(
+                        block.block_number,
+                        seq.logical_token_blocks[i].num_tokens)
+
+                    if block.block_number in physical_block_numbers:
+                        continue
+
+                    physical_block_numbers.add(block.block_number)
+                    num_physical_blocks += 1
+                    num_physical_tokens += seq.logical_token_blocks[i].num_tokens
+
+                seq_group_stats.add_seq(seq_id, seq_stats)
+
+            analysis.add_seq_group(seq_group_id, seq_group_stats)
+
+        assert num_physical_blocks == num_used_gpu_blocks
+
+        step = Step(
+            timestamp=now - self.stats.start_time,
+            input_lens=scheduler_outputs.num_batched_tokens,
+            swap_out_lens=len(scheduler_outputs.blocks_to_swap_out) * self.cache_config.block_size,
+            swap_in_lens=len(scheduler_outputs.blocks_to_swap_in) * self.cache_config.block_size,
+            num_preempted=num_preempted,
+            num_to_running=num_to_running,
+            num_waiting=len(self.waiting),
+            num_running=len(self.running),
+            num_swapped=len(self.swapped),
+            gpu_cache_usage=gpu_cache_usage,
+            cpu_cache_usage=cpu_cache_usage,
+            num_logical_blocks=num_logical_blocks,
+            num_logical_tokens=num_logical_tokens,
+            num_physical_blocks=num_physical_blocks,
+            num_physical_tokens=num_physical_tokens,
+            analysis=analysis
+        )
+        self.stats.add_step(step)
+
+    def reset_stats(self) -> None:
+        self.stats.reset(self.cache_config.num_gpu_blocks,
+                         self.cache_config.num_cpu_blocks)
+
+    def save_stats(
+        self,
+        output_dir: str,
+    ) -> None:
+        assert self.scheduler_config.collect_stats, 'Statistics collection is disabled.'
+        self.stats.save(output_dir)

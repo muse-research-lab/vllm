@@ -36,6 +36,15 @@ class CompletionOutput:
 
     def finished(self) -> bool:
         return self.finish_reason is not None
+    
+    def to_dict(self):
+        return {
+            "text": self.text,
+            "token_ids": self.token_ids,
+            "cumulative_logprob": self.cumulative_logprob,
+            "logprobs": self.logprobs,
+            "finish_reason": self.finish_reason,
+        }
 
     def __repr__(self) -> str:
         return (f"CompletionOutput(index={self.index}, "
@@ -109,6 +118,20 @@ class RequestOutput:
         finished = seq_group.is_finished()
         return cls(seq_group.request_id, prompt, prompt_token_ids,
                    prompt_logprobs, outputs, finished)
+
+    def to_dict(self):
+        outputs_dict = {}
+
+        for output in self.outputs:
+            outputs_dict[output.index] = output.to_dict()
+        
+        return {
+            "request_id": self.request_id,
+            "prompt": self.prompt,
+            "prompt_token_ids": self.prompt_token_ids,
+            "prompt_logprobs": self.prompt_logprobs,
+            "outputs": outputs_dict,
+        }
 
     def __repr__(self) -> str:
         return (f"RequestOutput(request_id={self.request_id}, "

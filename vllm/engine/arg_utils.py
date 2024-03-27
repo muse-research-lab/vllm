@@ -29,9 +29,11 @@ class EngineArgs:
     max_num_seqs: int = 256
     max_paddings: int = 256
     disable_log_stats: bool = False
+    collect_stats: bool = False
     revision: Optional[str] = None
     tokenizer_revision: Optional[str] = None
     quantization: Optional[str] = None
+    token: Optional[str] = None
 
     def __post_init__(self):
         if self.tokenizer is None:
@@ -113,6 +115,10 @@ class EngineArgs:
                             default=None,
                             help='model context length. If unspecified, '
                             'will be automatically derived from the model.')
+        parser.add_argument('--token',
+                            type=str,
+                            default=None,
+                            help='Hugging Face token')
         # Parallel arguments
         parser.add_argument('--worker-use-ray',
                             action='store_true',
@@ -189,7 +195,7 @@ class EngineArgs:
                                    self.download_dir, self.load_format,
                                    self.dtype, self.seed, self.revision,
                                    self.tokenizer_revision, self.max_model_len,
-                                   self.quantization)
+                                   self.quantization, self.token)
         cache_config = CacheConfig(
             self.block_size, self.gpu_memory_utilization, self.swap_space,
             getattr(model_config.hf_config, 'sliding_window', None))
@@ -199,7 +205,8 @@ class EngineArgs:
         scheduler_config = SchedulerConfig(self.max_num_batched_tokens,
                                            self.max_num_seqs,
                                            model_config.max_model_len,
-                                           self.max_paddings)
+                                           self.max_paddings,
+                                           self.collect_stats)
         return model_config, cache_config, parallel_config, scheduler_config
 
 
