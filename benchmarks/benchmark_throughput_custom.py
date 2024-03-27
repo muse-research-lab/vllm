@@ -137,6 +137,7 @@ if __name__ == '__main__':
     parser.add_argument('--output-dir', type=str, help='path to output directory', default=None)
     parser.add_argument('--collect-stats', action='store_true')
     parser.add_argument('--token', type=str, help='Hugging Face token', default=None)
+    parser.add_argument('--results-dir', type=str, help='results directory', default='./results')
 
     args = parser.parse_args()
     
@@ -153,7 +154,7 @@ if __name__ == '__main__':
     
     if args.output_dir is None:
         args.output_dir = os.path.join(
-            './results-offline',
+            args.results_dir,
             dataset_name,
             model_name,
             sample_dir,
